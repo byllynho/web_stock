@@ -1,4 +1,11 @@
-# Example using Docker, Django, multiple Postgres databases, NginX, Gunicorn, pipenv, GitLab CI and tox
+# Web Application that Scraps data form Yahoo Finance
+This applications has as a goal to scrap data from the Yahoo Finance website and used it by
+the needs of the developer. It uses a Plotly javascript extension to generate the charts based
+on the data acquired during the process.
+Another technologies used to developed this applications are listed and explained bellow:
+- Docker - Django - CSS - Plotly javascript - NGinx - Gunicorn
+
+## Instructions and Informations
 This is a [Docker][] setup for a web application based on Django.
 
 - The [Django][] application is served by [Gunicorn][] (WSGI application).
@@ -50,8 +57,3 @@ You need to install [Docker][] and [Docker-Compose][].
 [GitLab]: https://about.gitlab.com/
 [Makefile]: https://www.gnu.org/software/make/manual/make.html
 [Docker-Compose]: https://docs.docker.com/compose/
-
-## Related blog post
-[Docker Compose with NginX, Django, Gunicorn and multiple Postgres databases][post]
-
-[post]: http://pawamoy.github.io/2018/02/01/docker-compose-django-postgres-nginx.html
