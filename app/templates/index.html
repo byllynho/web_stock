@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper">
+        <form style="margin-top: 35px !important" class="form-horizontal">
+            <fieldset>
+                <h2 style="text-align: center; margin-bottom: 30px; margin-top: 30px ">FDO Finance</h2>
+                <div class="form-group">
+                    <div style="margin-bottom: 10px" class="row">
+                        <label class="col-md-3 control-label" for="company">Company:</label>
+                        <div class="col-md-8">
+                            <select id="company" name="company" id="company" class="form-control">
+                                <optgroup label="Companies">
+                                    <option value="AAPL">Apple Inc.</option>
+                                    <option value="AMZN">Amazon</option>
+                                    <option value="MSFT">Microsoft Corporation</option>
+                                    <option value="FB">Facebook, Inc.</option>
+                                </optgroup>
+                                <optgroup label="Stock Market">
+                                    <option value="^GSPC">S&P 500</option>
+                                    <option value="^DJI">Dow Jones</option>
+                                    <option value="^IXIC">Nasdaq</option>
+                                </optgroup>
+                                <optgroup label="Cryptocurrency">
+                                    <option value="BTC-USD">BTC-USD</option>
+                                    <option value="ETH-USD">ETH-USD</option>
+                                    <option value="XRP-USD">XRP-USD</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px" class="row">
+                        <label class="col-md-3 control-label">From:</label>
+                        <div class="col-md-8">
+                            <input type="text" id="from_datepicker" class="form-control input-md">
+                        </div>
+
+                    </div>
+                    <div style="margin-bottom: 10px" class="row">
+                        <label class="col-md-3 control-label">To:</label>
+                        <div class="col-md-8">
+                            <input type="text" id="to_datepicker" class="form-control input-md">
+                        </div>
+                    </div>
+                    <div class="col-md-10">
+                        <label class="radio-inline" for="radios-0">
+                          <input style="transform: scale(2)" type="radio" name="radios_chart_type" id="radios-0" value="candle" checked="checked">
+                          &nbsp;&nbsp;Candlestick &nbsp;&nbsp;
+                        </label>
+                        <label class="radio-inline" for="radios-1">
+                          <input style="transform: scale(2)" type="radio" name="radios_chart_type" id="radios-1" value="time_serie">
+                          &nbsp;&nbsp;Time Series
+                        </label>
+                    </div>
+                </div>
+                <div style="text-align: center">
+                    <a href="#" class="btn btn-primary btn-default" id="click_search"><span class="glyphicon glyphicon-signal"></span> Search</a>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div class="col-md-10" id="page-content-wrapper">
+        <div id="title_chart" style="text-align: center; font-size: 35px"></div>
+        <div class="container-fluid" id="chart_test">
+
+        </div>
+    </div>
+    <!-- /#page-content-wrapper -->
+
+</div>
+<!-- /#wrapper -->
+
+<!-- Bootstrap core JavaScript -->
+
+<script>
+
+    var endpoint = '/getStockData'
+    var open = close = low = high = smallest = biggest = date = []
+    $(document).ready(function(){
+        $('#from_datepicker').datepicker({
+            format: 'mm/dd/yyyy',
+        });
+        $('#to_datepicker').datepicker({
+            format: 'mm/dd/yyyy',
+        });
+        today = new Date()
+        var dd = today.getDate();
+        var mm = today.getMonth(); //January is 0!
+        var yyyy = today.getFullYear();
+        $('#from_datepicker').val(mm+'/'+dd+'/'+yyyy);
+        var mm = today.getMonth()+1; //January is 0!
+        $('#to_datepicker').val(mm+'/'+dd+'/'+yyyy);
+
+
+        $("#wrapper").toggleClass("toggled");
+        ajax_get_data();
+        $('input[name=radios_chart_type]').change(function(){
+            chart = $('input[name=radios_chart_type]:checked').val();
+            if(typeof date !== 'undefined' && date.length > 0){
+                if(chart == 'candle'){
+                    candle_chart();
+                } else {
+                    time_series();
+                }
+            }
+        });
+        $('#click_search').click(function(){
+            var parts ='2014-04-03'.split('-');
+
+            var mydate = new Date(parts[0], parts[1] - 1, parts[2]);
+            ajax_get_data();
+
+        });
+    })
+
+    function ajax_get_data(){
+
+        if($("#from_datepicker").val() || $("#to_datepicker").val()){
+            var parts_from =$("#from_datepicker").val().split('/');
+            var parts_to =$("#to_datepicker").val().split('/');
+            var mydate_from = new Date(parts_from[0], parts_from[1] - 1, parts_from[2]);
+            var mydate_to = new Date(parts_to[0], parts_to[1] - 1, parts_to[2]);
+            if(mydate_from < mydate_to){
+                $('#chart_test').html('<span></span>');
+                $('#title_chart').html('<center><div class="loader"></div></center>');
+                $.ajax({
+                    type: "POST",
+                    url: "/get_stock_data/",
+                    method: "POST",
+                    data: { "company": $("#company").val(), "data_from": $("#from_datepicker").val(), "data_to": $("#to_datepicker").val(), },
+                    dataType: 'json',
+                    success: function(data){
+                        if(data !== 'error'){
+                            open = JSON.parse(data.Open)
+
+                            close = JSON.parse(data.Close)
+                            low = JSON.parse(data.Low)
+                            high = JSON.parse(data.High)
+
+                            smallest = data.smallest
+                            biggest = data.biggest
+                            date = data.Date
+                            $('#title_chart').html('<span style="font-size: 18px">' + $("#company").val() + '(From: <b>' + $("#from_datepicker").val() + '</b> To: <b>' + $("#to_datepicker").val() + '</b>)</span>')
+
+                            chart = $('input[name=radios_chart_type]:checked').val();
+                            if(chart == 'candle'){
+                                candle_chart();
+                            } else {
+                                time_series();
+                            }
+                        } else {
+                            $('#title_chart').html('<div style="text-align: center">The application was not able to read the data. Try it again!</div>');
+                            $('#chart_test').html('<span></span>');
+                        }
+
+                    },
+                    error: function(xhr, status, error) {
+                        $('#chart_test').html(xhr.responseText)
+                        alert(xhr.responseText);
+                    }
+                })
+            } else {
+                alert('The initial date has be bigger than the final date!')
+            }
+        } else {
+            alert('Date from and to are needed!')
+        }
+    }
+
+    function candle_chart(){
+            var trace1 = {
+
+              x: date,
+
+              close: close,
+
+              increasing: {line: {color: 'green'}},
+              decreasing: {line: {color: 'red'}},
+
+              high: high,
+
+              line: {color: 'rgba(31,119,180,1)'},
+
+              low: low,
+
+              open: open,
+
+              type: 'candlestick',
+              xaxis: 'x',
+              yaxis: 'y'
+            };
+            console.log(date, open, low)
+            var data = [trace1];
+
+            var layout = {
+              dragmode: 'zoom',
+              margin: {
+                r: 10,
+                t: 40,
+                b: 40,
+                l: 60
+              },
+              showlegend: false,
+              xaxis: {
+                autorange: true,
+                domain: [0, 1],
+
+                type: 'date'
+              },
+
+              yaxis: {
+                autorange: true,
+                domain: [0, 1],
+                range: [smallest, biggest],
+                type: 'linear'
+              }
+            };
+
+            Plotly.newPlot('chart_test', data, layout);
+
+    }
+
+    function time_series(){
+        var trace1 = {
+          type: "scatter",
+          mode: "lines",
+          name: 'High',
+          x: date,
+          y: high,
+          line: {color: '#17BECF'}
+        }
+
+        var trace2 = {
+          type: "scatter",
+          mode: "lines",
+          name: 'Low',
+          x: date,
+          y: low,
+          line: {color: '#7F7F7F'}
+        }
+
+        var data = [trace1,trace2];
+
+        var layout = {
+          title: 'Basic Time Series',
+        };
+
+        Plotly.newPlot('chart_test', data, layout);
+
+    }
+</script>
+<!-- Menu Toggle Script -->
+
+{% endblock content %}
+

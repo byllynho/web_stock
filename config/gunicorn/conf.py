@@ -1,4 +1,4 @@
-name = 'hello'
+name = 'app'
 loglevel = 'info'
 errorlog = '-'
 accesslog = '-'

@@ -1,3 +1,3 @@
 from setuptools import setup
 
-setup(name='hello')
+setup(name='app')
